@@ -68,11 +68,11 @@ $ python ghostseeder.py -f torrents/ -p 59097
 
 The HTTP protocol between trackers and peers is explained [here](https://wiki.theory.org/BitTorrentSpecification#Tracker_HTTP.2FHTTPS_Protocol) 
 
-Every private torrent has an announce url to the tracker containing your unique passkey (e.g. `https://flacsfor.me/hu23mb2ik2vmetji37ss9t0awe3dlyqs/announce`). When your torrent client begins seeding a torrent, it uses this url to send parameters describing the current state of the torrent (including how much you've downloaded and uploaded). **All information about the torrent is self-reported by the client and the tracker does not have an explicit way to verify that information.**
+Every private torrent has an announce url to the tracker containing your unique passkey (e.g. `https://flacsfor.me/123456789abcdefg37ss9t0awe3dlyqs/announce`). When your torrent client begins seeding a torrent, it uses this url to send parameters describing the current state of the torrent (including how much you've downloaded and uploaded). **All information about the torrent is self-reported by the client and the tracker does not have an explicit way to verify that information.**
 
 The key request parameters are `info_hash` and `left`. `info_hash` identifies the specific torrent and `left` states how many bytes needed to finish downloading the torrent. **Setting `left=0` announces to the tracker that you are actively seeding the torrent**:
 ```
-GET https://flacsfor.me/hu23mb2ik2vmetji37ss9t0awe3dlyqs/announce?info_hash=%D5E%DB%06v%15D%8CLx%21%3B%C5v%1DNf%8E%1B4&peer_id=-qB4450-IdEkAzfIlnfw&uploaded=0&downloaded=0&left=0&compact=1&port=6881
+GET https://flacsfor.me/123456789abcdefg37ss9t0awe3dlyqs/announce?info_hash=%D5E%DB%06v%15D%8CLx%21%3B%C5v%1DNf%8E%1B4&peer_id=-qB4450-IdEkAzfIlnfw&uploaded=0&downloaded=0&left=0&compact=1&port=6881
 ```
 
 The server will respond with statistics about the torrent:
