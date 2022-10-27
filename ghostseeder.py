@@ -25,6 +25,7 @@ import aiohttp
 import yarl
 import pyben
 
+DEFAULT_SLEEP_INTERVAL = 1800  # 1800 seconds = 30 minutes
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
@@ -158,7 +159,7 @@ async def announce(
         logging.warning(
             f"Unable to parse server response for {torrent.name}:\n\n{response}"
         )
-        sleep = 900
+        sleep = DEFAULT_SLEEP_INTERVAL
 
     logging.info(f"Re-announcing {torrent.name} in {sleep + sleep_extra} seconds...")
 
