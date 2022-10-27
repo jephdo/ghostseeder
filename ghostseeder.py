@@ -33,7 +33,7 @@ logging.basicConfig(
 )
 
 
-def load_torrents(path: str) -> ['Torrent']:
+def load_torrents(path: str) -> ["Torrent"]:
     """Recursively find and parse through all torrent files in a directory
 
     path: folder containing torrent files
