@@ -86,10 +86,8 @@ class Torrent:
     def __init__(self, filepath: str):
         self.filepath = filepath
         self.torrent = pyben.load(filepath)
-
         info = self.torrent["info"]
         self.infohash = hashlib.sha1(pyben.benencode(info)).hexdigest()
-
         self.name = info["name"]
 
     @property
@@ -179,10 +177,10 @@ async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
         f"Tracker announces will use the following settings: (port={port}, peer_id='{peer_id}', sleep_extra={sleep_extra}s)"
     )
 
-    async with aiohttp.ClientSession() as client:
+    async with aiohttp.ClientSession() as session:
         torrents = (
             announce(
-                client, torrent, peer_id, port, initial_wait=n, sleep_extra=sleep_extra
+                session, torrent, peer_id, port, initial_wait=n, sleep_extra=sleep_extra
             )
             for torrent in torrents
         )
