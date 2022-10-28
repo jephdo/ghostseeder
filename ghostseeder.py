@@ -130,41 +130,37 @@ class Torrent:
         return response_bytes
 
 
-async def announce(
+async def announce_forever(
     session: aiohttp.ClientSession,
     torrent: Torrent,
     peer_id: int,
     port: int,
-    sleep: int = None,
     initial_wait: int = None,
     sleep_extra: int = 0,
 ) -> None:
-    if sleep is not None:
-        await asyncio.sleep(sleep + sleep_extra)
-
     # Don't want to send out a ton of requests simultaneously at first start up
     # Add a random amount of sleep time on the first announce to space out torrents
     if initial_wait is not None:
         assert initial_wait > 0
         await asyncio.sleep(random.randint(1, 5 * (initial_wait + 1)))
 
-    response_bytes = await torrent.announce(session, peer_id, port)
-    response = pyben.bendecode(response_bytes)
+    while True:
+        response_bytes = await torrent.announce(session, peer_id, port)
+        response = pyben.bendecode(response_bytes)
 
-    # Re-announce again at the given time provided by tracker
-    try:
-        sleep = response[0]["interval"]
-    except Exception:
-        logging.warning(
-            f"Unable to parse server response for {torrent.name}:\n\n{response}"
+        # Re-announce again at the given time provided by tracker
+        try:
+            sleep = response[0]["interval"]
+        except Exception:
+            logging.warning(
+                f"Unable to parse server response for {torrent.name}:\n\n{response}"
+            )
+            sleep = DEFAULT_SLEEP_INTERVAL
+
+        logging.info(
+            f"Re-announcing {torrent.name} in {sleep + sleep_extra} seconds..."
         )
-        sleep = DEFAULT_SLEEP_INTERVAL
-
-    logging.info(f"Re-announcing {torrent.name} in {sleep + sleep_extra} seconds...")
-
-    await announce(
-        session, torrent, peer_id, port, sleep=sleep, sleep_extra=sleep_extra
-    )
+        await asyncio.sleep(sleep + sleep_extra)
 
 
 async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
@@ -178,14 +174,20 @@ async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
     )
 
     async with aiohttp.ClientSession() as session:
-        torrents = (
-            announce(
-                session, torrent, peer_id, port, initial_wait=n, sleep_extra=sleep_extra
+        announces = []
+        for torrent in torrents:
+            announces.append(
+                announce_forever(
+                    session,
+                    torrent,
+                    peer_id,
+                    port,
+                    initial_wait=n,
+                    sleep_extra=sleep_extra,
+                )
             )
-            for torrent in torrents
-        )
 
-        await asyncio.gather(*torrents)
+        await asyncio.gather(*announces)
 
 
 if __name__ == "__main__":
