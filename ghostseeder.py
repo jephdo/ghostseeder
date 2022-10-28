@@ -51,7 +51,7 @@ def load_torrents(path: str) -> ["Torrent"]:
                 torrents.append(filepath)
 
     logging.info(f"Found {len(torrents)} torrent files")
-    logging.info("Loading torrent files into memory")
+    logging.info("Reading and parsing torrent files...")
 
     return [Torrent(file) for file in torrents]
 
@@ -86,8 +86,9 @@ def generate_peer_id(
 class Torrent:
     def __init__(self, filepath: str):
         self.filepath = filepath
-        self.torrent = pyben.load(filepath)
-        info = self.torrent["info"]
+        torrent = pyben.load(filepath)
+        info = torrent["info"]
+        self.tracker_url = torrent["announce"]
         self.infohash = hashlib.sha1(pyben.benencode(info)).hexdigest()
         self.name = info["name"]
 
@@ -105,8 +106,6 @@ class Torrent:
         left: int = 0,
         compact: int = 1,
     ) -> bytes:
-        tracker_url = self.torrent["announce"]
-        info = self.torrent["info"]
 
         params = {
             "info_hash": bytes.fromhex(self.infohash),
@@ -117,7 +116,7 @@ class Torrent:
             "compact": compact,
             "port": port,
         }
-        url = yarl.URL(tracker_url + "?" + urlencode(params), encoded=True)
+        url = yarl.URL(self.tracker_url + "?" + urlencode(params), encoded=True)
 
         logging.info(f"Announcing {self.name} to {url}")
 
