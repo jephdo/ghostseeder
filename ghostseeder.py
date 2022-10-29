@@ -25,7 +25,7 @@ import aiohttp
 import yarl
 import pyben
 
-DEBUG = True
+DEBUG = False
 DEFAULT_SLEEP_INTERVAL = 1800  # 1800 seconds = 30 minutes
 
 logging.basicConfig(
@@ -118,10 +118,10 @@ class Torrent:
             "compact": compact,
             "port": port,
         }
-        
+
         if event is not None:
-            assert event in ('started', 'stopped', 'completed')
-            params['event'] = event
+            assert event in ("started", "stopped", "completed")
+            params["event"] = event
 
         url = yarl.URL(self.tracker_url + "?" + urlencode(params), encoded=True)
 
@@ -167,7 +167,7 @@ async def announce_forever(
     try:
         count = 1
         while True:
-            event = 'started' if count == 1 else None
+            event = "started" if count == 1 else None
             response_bytes = await torrent.announce(session, peer_id, port, event=event)
             count += 1
 
@@ -182,8 +182,7 @@ async def announce_forever(
     # on graceful shutdown, tell the tracker the client has stopped seeding:
     finally:
         logging.info(f"Announcing stopped state to tracker: {torrent.name}")
-        await torrent.announce(session, peer_id, port, event='stopped')
-
+        await torrent.announce(session, peer_id, port, event="stopped")
 
 
 async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
