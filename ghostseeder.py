@@ -25,11 +25,12 @@ import aiohttp
 import yarl
 import pyben
 
+DEBUG = True
 DEFAULT_SLEEP_INTERVAL = 1800  # 1800 seconds = 30 minutes
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
+    level=logging.DEBUG if DEBUG else logging.INFO,
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
@@ -105,6 +106,7 @@ class Torrent:
         downloaded: int = 0,
         left: int = 0,
         compact: int = 1,
+        event: str = None,
     ) -> bytes:
 
         params = {
@@ -116,6 +118,11 @@ class Torrent:
             "compact": compact,
             "port": port,
         }
+        
+        if event is not None:
+            assert event in ('started', 'stopped', 'completed')
+            params['event'] = event
+
         url = yarl.URL(self.tracker_url + "?" + urlencode(params), encoded=True)
 
         logging.info(f"Announcing {self.name} to {url}")
@@ -128,6 +135,19 @@ class Torrent:
             )
 
         return response_bytes
+
+
+def parse_interval(response_bytes: bytes, torrent: Torrent) -> int:
+    response = pyben.bendecode(response_bytes)
+
+    try:
+        sleep = response[0]["interval"]
+    except Exception:
+        logging.warning(
+            f"Unable to parse server response for {torrent.name}:\n\n{response}"
+        )
+        sleep = DEFAULT_SLEEP_INTERVAL
+    return sleep
 
 
 async def announce_forever(
@@ -144,29 +164,33 @@ async def announce_forever(
         assert initial_wait > 0
         await asyncio.sleep(random.randint(1, 5 * (initial_wait + 1)))
 
-    while True:
-        response_bytes = await torrent.announce(session, peer_id, port)
-        response = pyben.bendecode(response_bytes)
+    try:
+        count = 1
+        while True:
+            event = 'started' if count == 1 else None
+            response_bytes = await torrent.announce(session, peer_id, port, event=event)
+            count += 1
 
-        # Re-announce again at the given time provided by tracker
-        try:
-            sleep = response[0]["interval"]
-        except Exception:
-            logging.warning(
-                f"Unable to parse server response for {torrent.name}:\n\n{response}"
+            # Re-announce again at the given time provided by tracker
+            sleep = parse_interval(response_bytes, torrent)
+
+            logging.info(
+                f"Re-announcing (#{count}) {torrent.name} in {sleep + sleep_extra} seconds..."
             )
-            sleep = DEFAULT_SLEEP_INTERVAL
 
-        logging.info(
-            f"Re-announcing {torrent.name} in {sleep + sleep_extra} seconds..."
-        )
-        await asyncio.sleep(sleep + sleep_extra)
+            await asyncio.sleep(sleep + sleep_extra)
+    # on graceful shutdown, tell the tracker the client has stopped seeding:
+    finally:
+        logging.info(f"Announcing stopped state to tracker: {torrent.name}")
+        await torrent.announce(session, peer_id, port, event='stopped')
+
 
 
 async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
     peer_id = generate_peer_id()
 
     torrents = load_torrents(filepath)
+    logging.info("Finished reading in torrent files")
     n = len(torrents)
 
     logging.info(
