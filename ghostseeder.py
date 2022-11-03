@@ -26,7 +26,7 @@ import yarl
 import pyben
 
 DEBUG = False
-DEFAULT_SLEEP_INTERVAL = 1800  # 1800 seconds = 30 minutes
+DEFAULT_SLEEP_INTERVAL = 3600  # 3600 seconds = 1 hour
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
@@ -84,6 +84,22 @@ def generate_peer_id(
     return peer_id
 
 
+def generate_useragent(peer_id: str) -> str:
+    # https://wiki.theory.org/BitTorrentSpecification#peer_id
+    client_map = {
+        'qB': 'qBittorrent',
+        'DE': 'Deluge',
+    }
+    str_ = peer_id.split('-')[1]
+    client_id = str_[:2]
+    major = int(str_[2])
+    minor = int(str_[3])
+    patch = int(str_[4])
+    client = client_map[client_id]
+    
+    return f"{client}/{major}.{minor}.{patch}"
+
+
 class Torrent:
     def __init__(self, filepath: str):
         self.filepath = filepath
@@ -109,6 +125,10 @@ class Torrent:
         event: str = None,
     ) -> bytes:
 
+        headers = {
+            'User-Agent': generate_useragent(peer_id)
+        }
+
         params = {
             "info_hash": bytes.fromhex(self.infohash),
             "peer_id": peer_id,
@@ -127,7 +147,7 @@ class Torrent:
 
         logging.info(f"Announcing {self.name} to {url}")
 
-        async with session.get(url) as response:
+        async with session.get(url, headers=headers) as response:
             response_bytes = await response.read()
 
             logging.debug(
@@ -138,15 +158,16 @@ class Torrent:
 
 
 def parse_interval(response_bytes: bytes, torrent: Torrent) -> int:
-    response = pyben.bendecode(response_bytes)
-
     try:
-        sleep = response[0]["interval"]
-    except Exception:
+        data, _ = pyben.bendecode(response_bytes)
+    except pyben.DecodeError:
         logging.warning(
-            f"Unable to parse server response for {torrent.name}:\n\n{response}"
+            f"Unable to parse server response for {torrent.name}:\n\n{response_bytes}"
         )
         sleep = DEFAULT_SLEEP_INTERVAL
+    else:
+        sleep = data["interval"]
+
     return sleep
 
 
@@ -164,36 +185,38 @@ async def announce_forever(
         assert initial_wait > 0
         await asyncio.sleep(random.randint(1, 5 * (initial_wait + 1)))
 
-    try:
-        count = 1
-        while True:
-            event = "started" if count == 1 else None
+    count = 1
+    while True:
+        event = "started" if count == 1 else None
+        try:
             response_bytes = await torrent.announce(session, peer_id, port, event=event)
-            count += 1
-
+        except aiohttp.ClientError as exc:
+            logging.warning(f"Unable to complete request for {torrent.name} exception occurred: {exc}")
+            response_bytes = None
+            sleep = DEFAULT_SLEEP_INTERVAL
+        else: 
             # Re-announce again at the given time provided by tracker
             sleep = parse_interval(response_bytes, torrent)
+        count += 1
 
-            logging.info(
-                f"Re-announcing (#{count}) {torrent.name} in {sleep + sleep_extra} seconds..."
-            )
+        logging.info(
+            f"Re-announcing (#{count}) {torrent.name} in {sleep + sleep_extra} seconds..."
+        )
 
-            await asyncio.sleep(sleep + sleep_extra)
-    # on graceful shutdown, tell the tracker the client has stopped seeding:
-    finally:
-        logging.info(f"Announcing stopped state to tracker: {torrent.name}")
-        await torrent.announce(session, peer_id, port, event="stopped")
+        await asyncio.sleep(sleep + sleep_extra)
+
 
 
 async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
     peer_id = generate_peer_id()
+    useragent = generate_useragent(peer_id)
 
     torrents = load_torrents(filepath)
     logging.info("Finished reading in torrent files")
     n = len(torrents)
 
     logging.info(
-        f"Tracker announces will use the following settings: (port={port}, peer_id='{peer_id}', sleep_extra={sleep_extra}s)"
+        f"Tracker announces will use the following settings: (port={port}, peer_id='{peer_id}', user-agent='{useragent}', sleep_extra={sleep_extra}s)"
     )
 
     async with aiohttp.ClientSession() as session:
