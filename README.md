@@ -12,7 +12,7 @@ Tested with Python v3.8+
 * [aiohttp](https://github.com/aio-libs/aiohttp) - A library for sending http requests
 * [pyben](https://github.com/alexpdev/pyben) -  Bencoding library for reading torrent files
   
-Script will announce itself as a qBittorrent client
+Script will announce itself as a [qBittorrent](https://github.com/qbittorrent/qBittorrent) client
 
 ## Example Usage
 Add torrents to a folder:
