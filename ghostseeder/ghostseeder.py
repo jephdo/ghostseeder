@@ -35,10 +35,12 @@ logging.basicConfig(
 )
 
 
-def load_torrents(path: str) -> ["Torrent"]:
+def load_torrents(path: str, peer_id: str, useragent: str) -> ["Torrent"]:
     """Recursively find and parse through all torrent files in a directory
 
     path: folder containing torrent files
+    peer_id: The BitTorrent protocol peer id used for announces
+    useragent: The user agent string to be used in HTTP requests when announcing
     """
     logging.info(f"Searching for torrent files located under '{path}'")
 
@@ -54,7 +56,20 @@ def load_torrents(path: str) -> ["Torrent"]:
     logging.info(f"Found {len(torrents)} torrent files")
     logging.info("Reading and parsing torrent files...")
 
-    return [Torrent(file) for file in torrents]
+    return [Torrent(file, peer_id, useragent) for file in torrents]
+
+
+def parse_version_info(version):
+    try:
+        major, minor, patch = version.split(".")
+
+        major = int(major)
+        minor = int(minor)
+        patch = int(patch)
+    except Exception as exc:
+        raise Exception(f"Can not parse version info: '{version}'") from exc
+
+    return major, minor, patch
 
 
 def generate_peer_id(
@@ -84,30 +99,29 @@ def generate_peer_id(
     return peer_id
 
 
-def generate_useragent(peer_id: str) -> str:
+def generate_useragent(
+    client: str = "qB", major: int = 4, minor: int = 4, patch: int = 5
+) -> str:
     # https://wiki.theory.org/BitTorrentSpecification#peer_id
     client_map = {
         "qB": "qBittorrent",
-        "DE": "Deluge",
     }
-    str_ = peer_id.split("-")[1]
-    client_id = str_[:2]
-    major = int(str_[2])
-    minor = int(str_[3])
-    patch = int(str_[4])
-    client = client_map[client_id]
+    client = client_map[client]
 
     return f"{client}/{major}.{minor}.{patch}"
 
 
 class Torrent:
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str, peer_id: str, useragent: str):
         self.filepath = filepath
         torrent = pyben.load(filepath)
         info = torrent["info"]
         self.tracker_url = torrent["announce"]
         self.infohash = hashlib.sha1(pyben.benencode(info)).hexdigest()
         self.name = info["name"]
+
+        self.peer_id = peer_id
+        self.useragent = useragent
 
     @property
     def magnet_link(self):
@@ -116,7 +130,6 @@ class Torrent:
     async def announce(
         self,
         session: aiohttp.ClientSession,
-        peer_id: str,
         port: int,
         uploaded: int = 0,
         downloaded: int = 0,
@@ -125,11 +138,11 @@ class Torrent:
         event: str = None,
     ) -> bytes:
 
-        headers = {"User-Agent": generate_useragent(peer_id)}
+        headers = {"User-Agent": self.useragent}
 
         params = {
             "info_hash": bytes.fromhex(self.infohash),
-            "peer_id": peer_id,
+            "peer_id": self.peer_id,
             "uploaded": uploaded,
             "downloaded": downloaded,
             "left": left,
@@ -172,7 +185,6 @@ def parse_interval(response_bytes: bytes, torrent: Torrent) -> int:
 async def announce_forever(
     session: aiohttp.ClientSession,
     torrent: Torrent,
-    peer_id: int,
     port: int,
     initial_wait: int = None,
 ) -> None:
@@ -186,7 +198,7 @@ async def announce_forever(
     while True:
         event = "started" if count == 1 else None
         try:
-            response_bytes = await torrent.announce(session, peer_id, port, event=event)
+            response_bytes = await torrent.announce(session, port, event=event)
         except aiohttp.ClientError as exc:
             logging.warning(
                 f"Unable to complete request for {torrent.name} exception occurred: {exc}"
@@ -203,11 +215,12 @@ async def announce_forever(
         await asyncio.sleep(sleep)
 
 
-async def ghostseed(filepath: str, port: int) -> None:
-    peer_id = generate_peer_id()
-    useragent = generate_useragent(peer_id)
+async def ghostseed(filepath: str, port: int, version: str) -> None:
+    major, minor, patch = parse_version_info(version)
+    peer_id = generate_peer_id("qB", major, minor, patch)
+    useragent = generate_useragent("qB", major, minor, patch)
 
-    torrents = load_torrents(filepath)
+    torrents = load_torrents(filepath, peer_id, useragent)
     logging.info("Finished reading in torrent files")
     n = len(torrents)
 
@@ -222,7 +235,6 @@ async def ghostseed(filepath: str, port: int) -> None:
                 announce_forever(
                     session,
                     torrent,
-                    peer_id,
                     port,
                     initial_wait=n,
                 )
@@ -237,6 +249,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("-f", "--folder", type=str, required=True)
     parser.add_argument("-p", "--port", nargs="?", type=int, const=1, default=6881)
+    parser.add_argument("-v", "--version", type=str, default="4.4.5")
     args = parser.parse_args()
 
-    asyncio.run(ghostseed(args.folder, args.port))
+    asyncio.run(ghostseed(args.folder, args.port, args.version))
