@@ -1,14 +1,9 @@
 """This Python script spoofs seeding of torrent files to private trackers
 by sending fake announces. 
 
-Trackers often reward bonus points for seeding large torrents 
-with few seeders. But trackers don't have a direct way to verify you 
-actually have the files except for possibly indirectly measuring
-self-reported upload/download rates from other peers on the same torrent.
-
-But if you seed torrents that are unlikely to ever be snatched (e.g. those very 
-same large torrents with few seeders!), there would be little indirect 
-evidence that you are spoofing
+Private trackers often reward bonus points for seeding large torrents 
+with few seeders. But trackers don't have an explicit way to verify you 
+actually have the files
 """
 import hashlib
 import os
