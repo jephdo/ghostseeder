@@ -37,7 +37,7 @@ $ nohup python ghostseeder/ghostseeder.py -f torrents/ &>> output.log &
 
 This will keep the script running in the background and store logs in `output.log`
 
-* `-f`, `--folder` your directory containing `.torrent` files
+* `-f`, `--folder` your directory containing `.torrent` files. Torrent files should be from a private tracker and the announce url should contain your unique passkey
 * `-p`, `--port` the port number announced to the tracker to receive incoming connections. Used if you want to change the port number announced to the tracker. Optional, defaults to `6881`
 * `-v`, `--version` the version of qBittorrent that you want to announce to the tracker. This info is used to generate the peer id and user agent string. Setting `-v '4.3.9'` will use qBittorrent v4.3.9. Optional, defaults to  `'4.4.5'`
 
@@ -69,4 +69,4 @@ Key request parameters to modify are `info_hash` and `left`. `info_hash` identif
 GET https://flacsfor.me/123456789abcdefg37ss9t0awe3dlyqs/announce?info_hash=%D5E%DB%06v%15D%8CLx%21%3B%C5v%1DNf%8E%1B4&peer_id=-qB4450-IdEkAzfIlnfw&uploaded=0&downloaded=0&left=0&compact=1&port=6881
 ```
 
-More details on the HTTP protocol between trackers and peers[here](https://wiki.theory.org/BitTorrentSpecification#Tracker_HTTP.2FHTTPS_Protocol) 
+More details on the HTTP protocol between trackers and peers [here](https://wiki.theory.org/BitTorrentSpecification#Tracker_HTTP.2FHTTPS_Protocol) 
