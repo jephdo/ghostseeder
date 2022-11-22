@@ -87,16 +87,16 @@ def generate_peer_id(
 def generate_useragent(peer_id: str) -> str:
     # https://wiki.theory.org/BitTorrentSpecification#peer_id
     client_map = {
-        'qB': 'qBittorrent',
-        'DE': 'Deluge',
+        "qB": "qBittorrent",
+        "DE": "Deluge",
     }
-    str_ = peer_id.split('-')[1]
+    str_ = peer_id.split("-")[1]
     client_id = str_[:2]
     major = int(str_[2])
     minor = int(str_[3])
     patch = int(str_[4])
     client = client_map[client_id]
-    
+
     return f"{client}/{major}.{minor}.{patch}"
 
 
@@ -125,9 +125,7 @@ class Torrent:
         event: str = None,
     ) -> bytes:
 
-        headers = {
-            'User-Agent': generate_useragent(peer_id)
-        }
+        headers = {"User-Agent": generate_useragent(peer_id)}
 
         params = {
             "info_hash": bytes.fromhex(self.infohash),
@@ -177,7 +175,6 @@ async def announce_forever(
     peer_id: int,
     port: int,
     initial_wait: int = None,
-    sleep_extra: int = 0,
 ) -> None:
     # Don't want to send out a ton of requests simultaneously at first start up
     # Add a random amount of sleep time on the first announce to space out torrents
@@ -191,23 +188,22 @@ async def announce_forever(
         try:
             response_bytes = await torrent.announce(session, peer_id, port, event=event)
         except aiohttp.ClientError as exc:
-            logging.warning(f"Unable to complete request for {torrent.name} exception occurred: {exc}")
+            logging.warning(
+                f"Unable to complete request for {torrent.name} exception occurred: {exc}"
+            )
             response_bytes = None
             sleep = DEFAULT_SLEEP_INTERVAL
-        else: 
+        else:
             # Re-announce again at the given time provided by tracker
             sleep = parse_interval(response_bytes, torrent)
         count += 1
 
-        logging.info(
-            f"Re-announcing (#{count}) {torrent.name} in {sleep + sleep_extra} seconds..."
-        )
+        logging.info(f"Re-announcing (#{count}) {torrent.name} in {sleep} seconds...")
 
-        await asyncio.sleep(sleep + sleep_extra)
+        await asyncio.sleep(sleep)
 
 
-
-async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
+async def ghostseed(filepath: str, port: int) -> None:
     peer_id = generate_peer_id()
     useragent = generate_useragent(peer_id)
 
@@ -216,7 +212,7 @@ async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
     n = len(torrents)
 
     logging.info(
-        f"Tracker announces will use the following settings: (port={port}, peer_id='{peer_id}', user-agent='{useragent}', sleep_extra={sleep_extra}s)"
+        f"Tracker announces will use the following settings: (port={port}, peer_id='{peer_id}', user-agent='{useragent}')"
     )
 
     async with aiohttp.ClientSession() as session:
@@ -229,7 +225,6 @@ async def ghostseed(filepath: str, port: int, sleep_extra: int) -> None:
                     peer_id,
                     port,
                     initial_wait=n,
-                    sleep_extra=sleep_extra,
                 )
             )
 
@@ -242,7 +237,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("-f", "--folder", type=str, required=True)
     parser.add_argument("-p", "--port", nargs="?", type=int, const=1, default=6881)
-    parser.add_argument("-s", "--sleepextra", nargs="?", type=int, const=1, default=0)
     args = parser.parse_args()
 
-    asyncio.run(ghostseed(args.folder, args.port, args.sleepextra))
+    asyncio.run(ghostseed(args.folder, args.port))
