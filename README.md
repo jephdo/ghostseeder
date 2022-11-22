@@ -54,7 +54,7 @@ $ python ghostseeder.py -f torrents/ -p 59097
 2022-10-27 12:34:23 INFO     Found torrents/freebsd/FreeBSD-11.4-RELEASE-amd64-disc1.iso.torrent
 2022-10-27 12:34:23 INFO     Found 5 torrent files
 2022-10-27 12:34:23 INFO     Loading torrent files into memory
-2022-10-27 12:34:23 INFO     Tracker announces will use the following settings: (port=59097, peer_id='-qB4450-NgMhgWdDpKul')
+2022-10-27 12:34:23 INFO     Tracker announces will use the following settings: (port=59097, peer_id='-qB4450-NgMhgWdDpKul', user-agent='qBittorrent/4.4.5')
 2022-10-27 12:34:26 INFO     Announcing ubuntu-22.10-desktop-amd64.iso to https://torrent.ubuntu.com/announce?info_hash=%99%C8%2B%B75%05%A3%C0%B4S%F9%FA%0E%88%1DnZ2%A0%C1&peer_id=-qB4450-NgMhgWdDpKul&uploaded=0&downloaded=0&left=0&compact=1&port=6881
 2022-10-27 12:34:26 INFO     Re-announcing ubuntu-22.10-desktop-amd64.iso in 1800 seconds...
 ...
