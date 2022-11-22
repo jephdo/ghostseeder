@@ -19,11 +19,11 @@ Add torrents to a folder:
 ```
 $ tree torrents/
 torrents/
-├── Top.Gun.Maverick.2022.1080p.WEB-DL.H264.AAC-EVO.torrent
-├── lord-of-the-rings
-│      ├── The.Lord.of.the.Rings.The.Rings.of.Power.S01E06.Udun.1080p.AMZN.WEBRip.DDP5.1.x264-NTb.torrent
-│      ├── The.Lord.of.the.Rings.The.Rings.of.Power.S01E07.The.Eye.1080p.AMZN.WEBRip.DDP5.1.x264-NTb.torrent
-│      └── The.Lord.of.the.Rings.The.Rings.of.Power.S01E08.Alloyed.1080p.AMZN.WEBRip.DDP5.1.x264-NTb.torrent
+├── archlinux-2022.11.01-x86_64.iso.torrent
+├── freebsd
+│      ├── FreeBSD-11.4-RELEASE-amd64-disc1.iso.torrent
+│      ├── FreeBSD-12.2-RELEASE-amd64-disc1.iso.torrent
+│      └── FreeBSD-13.1-RELEASE-amd64-disc1.iso.torrent
 └── ubuntu-22.10-desktop-amd64.iso.torrent
 
 1 directory, 5 files
@@ -48,10 +48,10 @@ $ python ghostseeder.py -f torrents/ -p 59097
 2022-10-27 12:34:23 INFO     Generating torrent client peer id: -qB4450-NgMhgWdDpKul
 2022-10-27 12:34:23 INFO     Searching for torrent files located under 'torrents/'
 2022-10-27 12:34:23 INFO     Found torrents/ubuntu-22.10-desktop-amd64.iso.torrent
-2022-10-27 12:34:23 INFO     Found torrents/Top.Gun.Maverick.2022.1080p.WEB-DL.H264.AAC-EVO.torrent
-2022-10-27 12:34:23 INFO     Found torrents/lord-of-the-rings/The.Lord.of.the.Rings.The.Rings.of.Power.S01E08.Alloyed.1080p.AMZN.WEBRip.DDP5.1.x264-NTb.torrent
-2022-10-27 12:34:23 INFO     Found torrents/lord-of-the-rings/The.Lord.of.the.Rings.The.Rings.of.Power.S01E07.The.Eye.1080p.AMZN.WEBRip.DDP5.1.x264-NTb.torrent
-2022-10-27 12:34:23 INFO     Found torrents/lord-of-the-rings/The.Lord.of.the.Rings.The.Rings.of.Power.S01E06.Udun.1080p.AMZN.WEBRip.DDP5.1.x264-NTb.torrent
+2022-10-27 12:34:23 INFO     Found torrents/archlinux-2022.11.01-x86_64.iso.torrent
+2022-10-27 12:34:23 INFO     Found torrents/freebsd/FreeBSD-13.1-RELEASE-amd64-disc1.iso.torrent
+2022-10-27 12:34:23 INFO     Found torrents/freebsd/FreeBSD-12.2-RELEASE-amd64-disc1.iso.torrent
+2022-10-27 12:34:23 INFO     Found torrents/freebsd/FreeBSD-11.4-RELEASE-amd64-disc1.iso.torrent
 2022-10-27 12:34:23 INFO     Found 5 torrent files
 2022-10-27 12:34:23 INFO     Loading torrent files into memory
 2022-10-27 12:34:23 INFO     Tracker announces will use the following settings: (port=59097, peer_id='-qB4450-NgMhgWdDpKul')
