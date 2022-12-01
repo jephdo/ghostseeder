@@ -166,13 +166,12 @@ class Torrent:
 def parse_interval(response_bytes: bytes, torrent: Torrent) -> int:
     try:
         data, _ = pyben.bendecode(response_bytes)
-    except pyben.DecodeError:
+        sleep = data["interval"]
+    except (pyben.DecodeError, KeyError):
         logging.warning(
             f"Unable to parse server response for {torrent.name}:\n\n{response_bytes}"
         )
         sleep = DEFAULT_SLEEP_INTERVAL
-    else:
-        sleep = data["interval"]
 
     return sleep
 
