@@ -30,7 +30,7 @@ logging.basicConfig(
 )
 
 
-def load_torrents(path: str, peer_id: str, useragent: str) -> ["Torrent"]:
+def load_torrents(path: str, peer_id: str, useragent: str) -> list:
     """Recursively find and parse through all torrent files in a directory
 
     path: folder containing torrent files
@@ -111,7 +111,10 @@ class Torrent:
         self.filepath = filepath
         torrent = pyben.load(filepath)
         info = torrent["info"]
-        self.tracker_url = torrent["announce"]
+        if len(torrent["announce"]):
+            self.tracker_url = torrent["announce"]
+        elif len(torrent["announce-list"]):
+            self.tracker_url = torrent["announce-list"][0][0]
         self.infohash = hashlib.sha1(pyben.benencode(info)).hexdigest()
         self.name = info["name"]
 
@@ -238,12 +241,5 @@ async def ghostseed(filepath: str, port: int, version: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Enter path to directory of torrent files"
-    )
-    parser.add_argument("-f", "--folder", type=str, required=True)
-    parser.add_argument("-p", "--port", nargs="?", type=int, const=1, default=6881)
-    parser.add_argument("-v", "--version", type=str, default="4.4.5")
-    args = parser.parse_args()
 
-    asyncio.run(ghostseed(args.folder, args.port, args.version))
+    asyncio.run(ghostseed(".torrent", 6881, "4.4.5"))
